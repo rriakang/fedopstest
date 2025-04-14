@@ -2,3 +2,4 @@
 fedops
 torchvision
 scikit-learn
+numpy==1.26.4

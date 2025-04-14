@@ -53,7 +53,7 @@ class manager_status(BaseModel):
 
     # FL_client: str = '0.0.0.0:8003'
     if len(sys.argv) == 1:
-        FL_client = 'localhost:8003'
+        FL_client: str = 'localhost:8003'
     else:
         FL_client = 'fl-client:8003'
     server_ST: str = 'ccl.gachon.ac.kr:40019'
