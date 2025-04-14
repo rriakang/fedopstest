@@ -1,0 +1,17 @@
+{"time":"2025-04-14T14:38:41.536036151+09:00","level":"INFO","msg":"stream: starting","core version":"0.19.9","symlink path":"/home/ccl/safer/Fedopstest/wandb/run-20250414_143841-s21b1b7e/logs/debug-core.log"}
+{"time":"2025-04-14T14:38:41.971412054+09:00","level":"INFO","msg":"created new stream","id":"s21b1b7e"}
+{"time":"2025-04-14T14:38:41.971485908+09:00","level":"INFO","msg":"stream: started","id":"s21b1b7e"}
+{"time":"2025-04-14T14:38:41.971522931+09:00","level":"INFO","msg":"handler: started","stream_id":"s21b1b7e"}
+{"time":"2025-04-14T14:38:41.971524369+09:00","level":"INFO","msg":"sender: started","stream_id":"s21b1b7e"}
+{"time":"2025-04-14T14:38:41.971562589+09:00","level":"INFO","msg":"writer: Do: started","stream_id":"s21b1b7e"}
+{"time":"2025-04-14T14:38:42.268431328+09:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-04-14T14:41:20.320869943+09:00","level":"WARN","msg":"handler: ignoring partial history record","step":1,"current":2}
+{"time":"2025-04-14T14:41:20.322790518+09:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-04-14T14:41:20.322896905+09:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-04-14T14:41:21.32576996+09:00","level":"INFO","msg":"handler: operation stats","stats":{"operations":[{"desc":"uploading config.yaml","runtime_seconds":0.45445181,"progress":"1.1KB/1.1KB"}],"total_operations":1}}
+{"time":"2025-04-14T14:41:21.449328882+09:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-04-14T14:41:21.934164521+09:00","level":"INFO","msg":"stream: closing","id":"s21b1b7e"}
+{"time":"2025-04-14T14:41:21.934204568+09:00","level":"INFO","msg":"handler: closed","stream_id":"s21b1b7e"}
+{"time":"2025-04-14T14:41:21.934224044+09:00","level":"INFO","msg":"writer: Close: closed","stream_id":"s21b1b7e"}
+{"time":"2025-04-14T14:41:21.934249838+09:00","level":"INFO","msg":"sender: closed","stream_id":"s21b1b7e"}
+{"time":"2025-04-14T14:41:21.934319046+09:00","level":"INFO","msg":"stream: closed","id":"s21b1b7e"}
