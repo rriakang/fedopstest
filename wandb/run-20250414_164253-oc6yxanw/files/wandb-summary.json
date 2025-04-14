@@ -1,0 +1,1 @@
+{"_runtime":42.010044553,"f1_score":0.9887647601585926,"operation_time":41.16556787490845,"_step":4,"round":1,"_wandb":{"runtime":42},"_timestamp":1.744616615411666e+09,"test_accuracy":0.98875,"gl_model_v":4,"test_loss":0.0580086710781077}

@@ -1,0 +1,86 @@
+[93mWARNING [0m:   DEPRECATED FEATURE: flwr.client.start_numpy_client() is deprecated.
+	Instead, use `flwr.client.start_client()` by ensuring you first call the `.to_client()` method as shown below:
+	flwr.client.start_client(
+		server_address='<IP>:<PORT>',
+		client=FlowerClient().to_client(), # <-- where FlowerClient is of type flwr.client.NumPyClient object
+	)
+	Using `start_numpy_client()` is deprecated.
+
+            This is a deprecated feature. It will be removed
+            entirely in future versions of Flower.
+
+[32mINFO[0m:     127.0.0.1:46432 - "[1mGET /online HTTP/1.1[0m" [32m200 OK[0m
+[2025-04-14 16:33:31,164][flwr][WARNING] - DEPRECATED FEATURE: flwr.client.start_numpy_client() is deprecated.
+	Instead, use `flwr.client.start_client()` by ensuring you first call the `.to_client()` method as shown below:
+	flwr.client.start_client(
+		server_address='<IP>:<PORT>',
+		client=FlowerClient().to_client(), # <-- where FlowerClient is of type flwr.client.NumPyClient object
+	)
+	Using `start_numpy_client()` is deprecated.
+
+            This is a deprecated feature. It will be removed
+            entirely in future versions of Flower.
+
+[93mWARNING [0m:   DEPRECATED FEATURE: flwr.client.start_client() is deprecated.
+	Instead, use the `flower-supernode` CLI command to start a SuperNode as shown below:
+
+		$ flower-supernode --insecure --superlink='<IP>:<PORT>'
+
+	To view all available options, run:
+
+		$ flower-supernode --help
+
+	Using `start_client()` is deprecated.
+
+            This is a deprecated feature. It will be removed
+            entirely in future versions of Flower.
+
+[2025-04-14 16:33:31,167][flwr][WARNING] - DEPRECATED FEATURE: flwr.client.start_client() is deprecated.
+	Instead, use the `flower-supernode` CLI command to start a SuperNode as shown below:
+
+		$ flower-supernode --insecure --superlink='<IP>:<PORT>'
+
+	To view all available options, run:
+
+		$ flower-supernode --help
+
+	Using `start_client()` is deprecated.
+
+            This is a deprecated feature. It will be removed
+            entirely in future versions of Flower.
+
+[2025-04-14 16:33:31,169][flwr][DEBUG] - Opened insecure gRPC connection (no certificates were passed)
+[2025-04-14 16:33:31,173][flwr][DEBUG] - ChannelConnectivity.IDLE
+[2025-04-14 16:33:31,177][flwr][DEBUG] - ChannelConnectivity.CONNECTING
+[2025-04-14 16:33:31,179][flwr][DEBUG] - ChannelConnectivity.READY
+[92mINFO [0m:
+[2025-04-14 16:33:33,110][flwr][INFO] -
+[92mINFO [0m:      Received: train message bfc39d8c-b3f8-4e6a-974f-038f70b37a64
+[2025-04-14 16:33:33,111][flwr][INFO] - Received: train message bfc39d8c-b3f8-4e6a-974f-038f70b37a64
+config: {'batch_size': 128, 'local_epochs': 1, 'num_rounds': 2}
+Starting training...
+Epoch 1/1: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████| 282/282 [00:14<00:00, 19.72batch/s]
+Starting evalutation...
+Testing: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 282/282 [00:08<00:00, 33.01batch/s]
+Starting evalutation...
+Testing: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 94/94 [00:02<00:00, 33.06batch/s]
+[2025-04-14 16:33:58,874][fedops.client.client_fl][INFO] - train_performance - {"fl_task_id": "test1", "client_mac": "b0:7b:25:0e:e7:96", "client_name": "ccl-e-server", "round": 1, "gl_model_v": 3, "train_loss": 0.010247391162081853, "train_accuracy": 0.9964722222222222, "train_f1_score": 0.9964735016070477, "val_loss": 0.039711579233358434, "val_accuracy": 0.9889166666666667, "val_f1_score": 0.9889217259626893, "train_time": 25.75334334373474, "wandb_name": "ccl-e-server-v0(2025-04-14 16:18:41.744043)"}
+[92mINFO [0m:      Sent reply
+[2025-04-14 16:33:58,931][flwr][INFO] - Sent reply
+[92mINFO [0m:
+[2025-04-14 16:34:29,036][flwr][INFO] -
+[92mINFO [0m:      Received: evaluate message 6c215c8a-b159-4e64-a74c-aebcbf5d71d3
+[2025-04-14 16:34:29,037][flwr][INFO] - Received: evaluate message 6c215c8a-b159-4e64-a74c-aebcbf5d71d3
+Starting evalutation...
+Testing: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 94/94 [00:03<00:00, 30.73batch/s]
+[2025-04-14 16:34:32,125][fedops.client.client_fl][INFO] - test - {"fl_task_id": "test1", "client_mac": "b0:7b:25:0e:e7:96", "client_name": "ccl-e-server", "round": 1, "test_loss": 0.0480485178252801, "test_accuracy": 0.9881666666666666, "gl_model_v": 3, "wandb_name": "ccl-e-server-v0(2025-04-14 16:18:41.744043)"}
+[92mINFO [0m:      Sent reply
+[2025-04-14 16:34:32,142][flwr][INFO] - Sent reply
+[92mINFO [0m:
+[2025-04-14 16:34:32,157][flwr][INFO] -
+[92mINFO [0m:      Received: reconnect message 724ec134-5db0-4f63-bcf3-a28b1650d406
+[2025-04-14 16:34:32,158][flwr][INFO] - Received: reconnect message 724ec134-5db0-4f63-bcf3-a28b1650d406
+[2025-04-14 16:34:32,163][flwr][DEBUG] - gRPC channel closed
+[92mINFO [0m:      Disconnect and shut down
+[2025-04-14 16:34:32,164][flwr][INFO] - Disconnect and shut down
+[2025-04-14 16:34:32,166][root][INFO] - fl learning finished

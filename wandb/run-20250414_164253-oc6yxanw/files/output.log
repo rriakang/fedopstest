@@ -1,0 +1,71 @@
+[93mWARNING [0m:   DEPRECATED FEATURE: flwr.client.start_numpy_client() is deprecated.
+	Instead, use `flwr.client.start_client()` by ensuring you first call the `.to_client()` method as shown below:
+	flwr.client.start_client(
+		server_address='<IP>:<PORT>',
+		client=FlowerClient().to_client(), # <-- where FlowerClient is of type flwr.client.NumPyClient object
+	)
+	Using `start_numpy_client()` is deprecated.
+
+            This is a deprecated feature. It will be removed
+            entirely in future versions of Flower.
+
+[2025-04-14 16:42:54,245][flwr][WARNING] - DEPRECATED FEATURE: flwr.client.start_numpy_client() is deprecated.
+	Instead, use `flwr.client.start_client()` by ensuring you first call the `.to_client()` method as shown below:
+	flwr.client.start_client(
+		server_address='<IP>:<PORT>',
+		client=FlowerClient().to_client(), # <-- where FlowerClient is of type flwr.client.NumPyClient object
+	)
+	Using `start_numpy_client()` is deprecated.
+
+            This is a deprecated feature. It will be removed
+            entirely in future versions of Flower.
+
+[93mWARNING [0m:   DEPRECATED FEATURE: flwr.client.start_client() is deprecated.
+	Instead, use the `flower-supernode` CLI command to start a SuperNode as shown below:
+
+		$ flower-supernode --insecure --superlink='<IP>:<PORT>'
+
+	To view all available options, run:
+
+		$ flower-supernode --help
+
+	Using `start_client()` is deprecated.
+
+            This is a deprecated feature. It will be removed
+            entirely in future versions of Flower.
+
+[2025-04-14 16:42:54,247][flwr][WARNING] - DEPRECATED FEATURE: flwr.client.start_client() is deprecated.
+	Instead, use the `flower-supernode` CLI command to start a SuperNode as shown below:
+
+		$ flower-supernode --insecure --superlink='<IP>:<PORT>'
+
+	To view all available options, run:
+
+		$ flower-supernode --help
+
+	Using `start_client()` is deprecated.
+
+            This is a deprecated feature. It will be removed
+            entirely in future versions of Flower.
+
+[2025-04-14 16:42:54,253][flwr][DEBUG] - Opened insecure gRPC connection (no certificates were passed)
+[2025-04-14 16:42:54,256][flwr][DEBUG] - ChannelConnectivity.IDLE
+[2025-04-14 16:42:54,258][flwr][DEBUG] - ChannelConnectivity.CONNECTING
+[2025-04-14 16:42:54,262][flwr][DEBUG] - ChannelConnectivity.READY
+[92mINFO [0m:
+[2025-04-14 16:43:32,427][flwr][INFO] -
+[92mINFO [0m:      Received: evaluate message f9f087da-a642-4292-9afc-53defed69f3a
+[2025-04-14 16:43:32,428][flwr][INFO] - Received: evaluate message f9f087da-a642-4292-9afc-53defed69f3a
+Starting evalutation...
+Testing: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 94/94 [00:02<00:00, 32.41batch/s]
+[2025-04-14 16:43:35,358][fedops.client.client_fl][INFO] - test - {"fl_task_id": "test1", "client_mac": "b0:7b:25:0e:e7:96", "client_name": "ccl-e-server", "round": 1, "test_loss": 0.0580086710781077, "test_accuracy": 0.98875, "gl_model_v": 4, "wandb_name": "ccl-e-server-v0(2025-04-14 16:18:41.744043)"}
+[92mINFO [0m:      Sent reply
+[2025-04-14 16:43:35,377][flwr][INFO] - Sent reply
+[92mINFO [0m:
+[2025-04-14 16:43:35,390][flwr][INFO] -
+[92mINFO [0m:      Received: reconnect message 31b4af06-80f9-4114-b18c-ca95c69ef58a
+[2025-04-14 16:43:35,391][flwr][INFO] - Received: reconnect message 31b4af06-80f9-4114-b18c-ca95c69ef58a
+[2025-04-14 16:43:35,397][flwr][DEBUG] - gRPC channel closed
+[92mINFO [0m:      Disconnect and shut down
+[2025-04-14 16:43:35,405][flwr][INFO] - Disconnect and shut down
+[2025-04-14 16:43:35,407][root][INFO] - fl learning finished

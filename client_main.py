@@ -15,9 +15,8 @@ from omegaconf import DictConfig, OmegaConf
 
 def local_training(model, train_loader, hyperparams, epochs, cfg):
     """
-    각 후보 하이퍼파라미터(학습률) candidate별로 1 epoch(또는 epochs) 학습을 진행하여 손실값을 비교.
-    각 후보에 대해 optimizer를 새로 생성하여 모델을 복사한 뒤 학습.
-    최종적으로 loss가 최소인 후보와 해당 loss, 최종 모델 가중치(state_dict)를 선택.
+    각 후보 하이퍼파라미터(예: 학습률) candidate별로 1 epoch(또는 epochs) 학습을 진행하여 손실값을 비교합니다.
+    각 후보마다 optimizer를 새로 생성하고 모델 복사본에서 학습한 뒤, 최종적으로 평균 손실(loss)이 가장 낮은 후보를 선택합니다.
     """
     candidate_results = []
     for hp in hyperparams:
@@ -83,14 +82,14 @@ def main(cfg: DictConfig) -> None:
                                                   listdir=local_list,
                                                   model=model)
     
-    # 서버로부터 broadcast된 하이퍼파라미터 집합이 있다면 (없으면 config의 후보 사용)
+    # 서버로부터 broadcast된 하이퍼파라미터 후보 집합이 없으면 config의 후보 사용
     hyperparams = cfg.get("hyperparams", [0.001, 0.005, 0.01])
     
-    # 각 후보 하이퍼파라미터에 대해 로컬 1 epoch 학습을 진행하여 최적 후보 선정
+    # 각 후보에 대해 로컬 1 epoch 학습을 진행하여 최적 후보(손실 최소)를 선택
     best_hp, best_loss = local_training(model, train_loader, hyperparams, epochs=1, cfg=cfg)
     logger.info(f"Selected best hyperparameter: {best_hp} with loss: {best_loss}")
     
-    # registration 딕셔너리에 학습 결과 및 선택된 하이퍼파라미터 추가 (서버 전송용)
+    # registration 딕셔너리에 학습 결과 및 선택된 후보 하이퍼파라미터 추가 (서버 전송용)
     registration = {
         "train_loader": train_loader,
         "val_loader": val_loader,
@@ -103,7 +102,7 @@ def main(cfg: DictConfig) -> None:
         "best_loss": best_loss
     }
     
-    # FLClientTask를 초기화하여 서버와 통신 (실제 FedOps의 내부 동작에 따라 client가 업데이트 전송)
+    # FLClientTask를 초기화하여 서버와 통신 (실제 FedOps 내부 동작에 따라 클라이언트 업데이트 전송)
     fl_client = FLClientTask(cfg, registration)
     fl_client.start()
 

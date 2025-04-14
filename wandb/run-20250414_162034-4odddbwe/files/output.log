@@ -1,0 +1,109 @@
+[93mWARNING [0m:   DEPRECATED FEATURE: flwr.client.start_numpy_client() is deprecated.
+	Instead, use `flwr.client.start_client()` by ensuring you first call the `.to_client()` method as shown below:
+	flwr.client.start_client(
+		server_address='<IP>:<PORT>',
+		client=FlowerClient().to_client(), # <-- where FlowerClient is of type flwr.client.NumPyClient object
+	)
+	Using `start_numpy_client()` is deprecated.
+
+            This is a deprecated feature. It will be removed
+            entirely in future versions of Flower.
+
+[2025-04-14 16:20:35,265][flwr][WARNING] - DEPRECATED FEATURE: flwr.client.start_numpy_client() is deprecated.
+	Instead, use `flwr.client.start_client()` by ensuring you first call the `.to_client()` method as shown below:
+	flwr.client.start_client(
+		server_address='<IP>:<PORT>',
+		client=FlowerClient().to_client(), # <-- where FlowerClient is of type flwr.client.NumPyClient object
+	)
+	Using `start_numpy_client()` is deprecated.
+
+            This is a deprecated feature. It will be removed
+            entirely in future versions of Flower.
+
+[32mINFO[0m:     127.0.0.1:41814 - "[1mGET /online HTTP/1.1[0m" [32m200 OK[0m
+[93mWARNING [0m:   DEPRECATED FEATURE: flwr.client.start_client() is deprecated.
+	Instead, use the `flower-supernode` CLI command to start a SuperNode as shown below:
+
+		$ flower-supernode --insecure --superlink='<IP>:<PORT>'
+
+	To view all available options, run:
+
+		$ flower-supernode --help
+
+	Using `start_client()` is deprecated.
+
+            This is a deprecated feature. It will be removed
+            entirely in future versions of Flower.
+
+[2025-04-14 16:20:35,268][flwr][WARNING] - DEPRECATED FEATURE: flwr.client.start_client() is deprecated.
+	Instead, use the `flower-supernode` CLI command to start a SuperNode as shown below:
+
+		$ flower-supernode --insecure --superlink='<IP>:<PORT>'
+
+	To view all available options, run:
+
+		$ flower-supernode --help
+
+	Using `start_client()` is deprecated.
+
+            This is a deprecated feature. It will be removed
+            entirely in future versions of Flower.
+
+[2025-04-14 16:20:35,283][flwr][DEBUG] - Opened insecure gRPC connection (no certificates were passed)
+[2025-04-14 16:20:35,288][flwr][DEBUG] - ChannelConnectivity.IDLE
+[2025-04-14 16:20:35,289][flwr][DEBUG] - ChannelConnectivity.CONNECTING
+[2025-04-14 16:20:35,294][flwr][DEBUG] - ChannelConnectivity.READY
+[92mINFO [0m:
+[2025-04-14 16:20:37,436][flwr][INFO] -
+[92mINFO [0m:      Received: train message ee46591e-4aa7-481b-8562-45da69ac5e23
+[2025-04-14 16:20:37,437][flwr][INFO] - Received: train message ee46591e-4aa7-481b-8562-45da69ac5e23
+config: {'batch_size': 128, 'local_epochs': 1, 'num_rounds': 2}
+Starting training...
+Epoch 1/1: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████| 282/282 [00:15<00:00, 17.88batch/s]
+Starting evalutation...
+Testing: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 282/282 [00:09<00:00, 30.86batch/s]
+Starting evalutation...
+Testing: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 94/94 [00:03<00:00, 29.81batch/s]
+[2025-04-14 16:21:05,630][fedops.client.client_fl][INFO] - train_performance - {"fl_task_id": "test1", "client_mac": "b0:7b:25:0e:e7:96", "client_name": "ccl-e-server", "round": 1, "gl_model_v": 2, "train_loss": 0.019423342957813623, "train_accuracy": 0.9936666666666667, "train_f1_score": 0.9936617223668135, "val_loss": 0.038588879402092796, "val_accuracy": 0.9884166666666667, "val_f1_score": 0.9884042148655026, "train_time": 28.18131422996521, "wandb_name": "ccl-e-server-v0(2025-04-14 16:18:41.744043)"}
+[92mINFO [0m:      Sent reply
+[2025-04-14 16:21:05,701][flwr][INFO] - Sent reply
+[92mINFO [0m:
+[2025-04-14 16:21:12,946][flwr][INFO] -
+[92mINFO [0m:      Received: evaluate message 2b6a72df-7760-407b-86e8-cfb254f9bbca
+[2025-04-14 16:21:12,947][flwr][INFO] - Received: evaluate message 2b6a72df-7760-407b-86e8-cfb254f9bbca
+Starting evalutation...
+Testing: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 94/94 [00:03<00:00, 30.92batch/s]
+[2025-04-14 16:21:16,019][fedops.client.client_fl][INFO] - test - {"fl_task_id": "test1", "client_mac": "b0:7b:25:0e:e7:96", "client_name": "ccl-e-server", "round": 1, "test_loss": 0.043719340036524106, "test_accuracy": 0.9875833333333334, "gl_model_v": 2, "wandb_name": "ccl-e-server-v0(2025-04-14 16:18:41.744043)"}
+[92mINFO [0m:      Sent reply
+[2025-04-14 16:21:16,037][flwr][INFO] - Sent reply
+[92mINFO [0m:
+[2025-04-14 16:21:18,329][flwr][INFO] -
+[92mINFO [0m:      Received: train message bd7efdfb-a521-46e4-9c98-7344934e5c13
+[2025-04-14 16:21:18,330][flwr][INFO] - Received: train message bd7efdfb-a521-46e4-9c98-7344934e5c13
+config: {'batch_size': 128, 'local_epochs': 1, 'num_rounds': 2}
+Starting training...
+Epoch 1/1: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████| 282/282 [00:14<00:00, 19.12batch/s]
+Starting evalutation...
+Testing: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████| 282/282 [00:08<00:00, 32.41batch/s]
+Starting evalutation...
+Testing: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 94/94 [00:02<00:00, 32.23batch/s]
+[2025-04-14 16:21:44,790][fedops.client.client_fl][INFO] - train_performance - {"fl_task_id": "test1", "client_mac": "b0:7b:25:0e:e7:96", "client_name": "ccl-e-server", "round": 2, "gl_model_v": 2, "train_loss": 0.01791708162574573, "train_accuracy": 0.9945277777777778, "train_f1_score": 0.9945312871221663, "val_loss": 0.039090939146030616, "val_accuracy": 0.987, "val_f1_score": 0.9870065310665582, "train_time": 26.44530415534973, "wandb_name": "ccl-e-server-v0(2025-04-14 16:18:41.744043)"}
+[92mINFO [0m:      Sent reply
+[2025-04-14 16:21:44,853][flwr][INFO] - Sent reply
+[92mINFO [0m:
+[2025-04-14 16:21:51,746][flwr][INFO] -
+[92mINFO [0m:      Received: evaluate message 979165ea-1662-46ec-b203-c3a3f1f746c7
+[2025-04-14 16:21:51,747][flwr][INFO] - Received: evaluate message 979165ea-1662-46ec-b203-c3a3f1f746c7
+Starting evalutation...
+Testing: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████| 94/94 [00:03<00:00, 27.17batch/s]
+[2025-04-14 16:21:55,234][fedops.client.client_fl][INFO] - test - {"fl_task_id": "test1", "client_mac": "b0:7b:25:0e:e7:96", "client_name": "ccl-e-server", "round": 2, "test_loss": 0.04566200480281197, "test_accuracy": 0.9868333333333333, "gl_model_v": 2, "wandb_name": "ccl-e-server-v0(2025-04-14 16:18:41.744043)"}
+[92mINFO [0m:      Sent reply
+[2025-04-14 16:21:55,250][flwr][INFO] - Sent reply
+[92mINFO [0m:
+[2025-04-14 16:21:55,265][flwr][INFO] -
+[92mINFO [0m:      Received: reconnect message 66fbfdd5-5820-4e6b-90fb-95c8ea454228
+[2025-04-14 16:21:55,266][flwr][INFO] - Received: reconnect message 66fbfdd5-5820-4e6b-90fb-95c8ea454228
+[2025-04-14 16:21:55,270][flwr][DEBUG] - gRPC channel closed
+[92mINFO [0m:      Disconnect and shut down
+[2025-04-14 16:21:55,271][flwr][INFO] - Disconnect and shut down
+[2025-04-14 16:21:55,274][root][INFO] - fl learning finished
