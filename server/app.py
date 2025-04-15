@@ -201,11 +201,12 @@ class GeneticFLServer:
         self.model_type = model_type
         self.gl_val_loader = gl_val_loader
         self.test_torch = test_torch
-        self.hyperparams = initial_hyperparams  # 예: [[0.001, 128], [0.005, 64], [0.01, 32]]
-        self.client_updates = []
+        # 구성 파일에 정의된 초기 후보 하이퍼파라미터 (예: [[0.001, 128], [0.005, 64], [0.01, 32]])
+        self.hyperparams = initial_hyperparams  
+        self.client_updates = []  # 클라이언트 업데이트 저장 리스트
         self.num_rounds = int(cfg.num_rounds)
         self.task_id = os.environ.get("TASK_ID", "default_task")
-        self.server = server_utils.FLServerStatus()
+        self.server = server_utils.FLServerStatus()  # 글로벌 모델 버전 등 상태 관리 객체
 
     def get_model_weights(self):
         return self.model.state_dict()
@@ -214,19 +215,21 @@ class GeneticFLServer:
         self.model.load_state_dict(new_state_dict)
     
     def send_to_clients(self, broadcast_data: Dict):
+        # 실제 네트워크 전송 대신 출력
         print("Broadcasting model and hyperparameters to clients:")
         print(broadcast_data)
     
     def collect_client_updates(self):
         """
         실제 클라이언트로부터 업데이트를 수집하는 함수.
-        각 클라이언트는 { 'weights': state_dict, 'loss': 실제 손실 값, 'hyperparam': [learning_rate, batch_size] } 형태로 데이터를 전송해야 합니다.
-        이 함수는 실제 업데이트 수집 로직(예: 네트워크 통신, 메시지 큐 등)으로 대체되어야 합니다.
+        각 클라이언트는 { 'weights': state_dict, 'loss': 실제 손실 값, 'hyperparam': [learning_rate, batch_size] }
+        형태로 데이터를 전송해야 합니다.
+        실제 업데이트 수집 로직(예: 네트워크 통신, 메시지 큐 등)으로 대체되어야 하며,
         여기서는 예시용 dummy update를 반환합니다.
         """
         dummy_update = {
             "weights": self.get_model_weights(),
-            "loss": 0.25,  # 실제 손실 값
+            "loss": 0.25,  # 실제 손실 값이 들어가야 합니다.
             "hyperparam": self.hyperparams[0]  # 예: [0.001, 128]
         }
         print("Collecting client updates (dummy update)...")
@@ -250,7 +253,7 @@ class GeneticFLServer:
         for k in total_weights:
             total_weights[k] = total_weights[k] / len(client_updates)
             
-        # DBSCAN 클러스터링: hyperparams_list -> numpy 배열 (shape=(n_samples, 2))
+        # DBSCAN 클러스터링: hyperparams_list → numpy 배열 (n_samples, 2)
         hyperparams_array = np.array(hyperparams_list)
         scaled_array = hyperparams_array.copy()
         # 배치 크기는 로그 변환하여 스케일 보정
@@ -275,11 +278,10 @@ class GeneticFLServer:
         print("Evolved hyperparameters after clustering:", new_hyperparams)
         self.hyperparams = new_hyperparams
         
-        # 서버 상태 전송: dict를 OmegaConf 객체로 생성한 후 변환하여 JSON 직렬화
         from omegaconf import OmegaConf
         status_payload = {
             "FL_task_id": self.task_id,
-            "evolved_hyperparams": new_hyperparams,
+            "evolved_hyperparams": self.hyperparams,
             "num_client_updates": len(client_updates),
             "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
@@ -315,50 +317,46 @@ class GeneticFLServer:
         }
         server_api.ServerAPI(self.task_id).put_gl_model_evaluation(json.dumps(eval_payload))
     
-        def register_and_upload_model(self):
-            """
-            FL 서버의 최종 글로벌 모델 등록 및 업로드 과정.
-            기존 FLServer의 흐름을 따라, 글로벌 모델 등록, 서버 운영 시간 측정,
-            서버 시간 결과 전송, 그리고 S3 업로드를 수행합니다.
-            """
-            fl_start_time = time.time()
-            gl_model_name = self.model_name  # 실제 등록 로직에 따라 수정 가능
-            fl_end_time = time.time() - fl_start_time
-            
-            # 서버 운영 시간 결과 전송
-            server_all_time_result = {
-                "fl_task_id": self.task_id,
-                "server_operation_time": fl_end_time,
-                "gl_model_v": self.server.gl_model_v
-            }
-            json_all_time_result = json.dumps(server_all_time_result)
-            logging.info(f'server_operation_time - {json_all_time_result}')
-            server_api.ServerAPI(self.task_id).put_server_time_result(json_all_time_result)
-            
-            # 글로벌 모델 파일 이름 생성 및 파일 존재 여부 체크
-            if self.model_type == "Tensorflow":
-                global_model_file_name = f"{gl_model_name}_gl_model_V{self.server.gl_model_v}.h5"
-            elif self.model_type == "Pytorch":
-                global_model_file_name = f"{gl_model_name}_gl_model_V{self.server.gl_model_v}.pth"
-            elif self.model_type == "Huggingface":
-                global_model_file_name = f"{gl_model_name}_gl_model_V{self.server.gl_model_v}"
-            else:
-                logging.error("Unknown model type.")
-                return
-
-            file_path = f"./{global_model_file_name}"
-            if not os.path.exists(file_path):
-                logging.error(f"Global model file not found: {file_path}")
-                raise FileNotFoundError(f"Global model file not found: {file_path}")
-            
-            # S3 업로드 진행
-            try:
-                server_utils.upload_model_to_bucket(self.task_id, global_model_file_name)
-                logging.info(f'upload {global_model_file_name} model in s3')
-            except Exception as upload_err:
-                logging.error("Error during S3 upload:", exc_info=upload_err)
-                raise upload_err
-
+    def register_and_upload_model(self):
+        """
+        FL 서버의 최종 글로벌 모델 등록 및 업로드 과정.
+        기존 FLServer의 흐름을 따라, 글로벌 모델 등록, 서버 운영 시간 측정,
+        서버 시간 결과 전송, 그리고 S3 업로드를 수행합니다.
+        """
+        fl_start_time = time.time()
+        gl_model_name = self.model_name  # 실제 등록 로직에 따라 수정 가능
+        fl_end_time = time.time() - fl_start_time
+        
+        server_all_time_result = {
+            "fl_task_id": self.task_id,
+            "server_operation_time": fl_end_time,
+            "gl_model_v": self.server.gl_model_v
+        }
+        json_all_time_result = json.dumps(server_all_time_result)
+        logging.info(f'server_operation_time - {json_all_time_result}')
+        server_api.ServerAPI(self.task_id).put_server_time_result(json_all_time_result)
+        
+        if self.model_type == "Tensorflow":
+            global_model_file_name = f"{gl_model_name}_gl_model_V{self.server.gl_model_v}.h5"
+        elif self.model_type == "Pytorch":
+            global_model_file_name = f"{gl_model_name}_gl_model_V{self.server.gl_model_v}.pth"
+        elif self.model_type == "Huggingface":
+            global_model_file_name = f"{gl_model_name}_gl_model_V{self.server.gl_model_v}"
+        else:
+            logging.error("Unknown model type for upload.")
+            return
+        
+        file_path = f"./{global_model_file_name}"
+        if not os.path.exists(file_path):
+            logging.error(f"Global model file not found: {file_path}")
+            raise FileNotFoundError(f"Global model file not found: {file_path}")
+        
+        try:
+            server_utils.upload_model_to_bucket(self.task_id, global_model_file_name)
+            logging.info(f'upload {global_model_file_name} model in s3')
+        except Exception as upload_err:
+            logging.error("Error during S3 upload:", exc_info=upload_err)
+            raise upload_err
     
     def start(self):
         for r in range(1, self.num_rounds + 1):
