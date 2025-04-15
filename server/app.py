@@ -12,9 +12,8 @@ from collections import OrderedDict
 from hydra.utils import instantiate
 from sklearn.cluster import DBSCAN
 from genetic_tuner import evolve  # 2차원 하이퍼파라미터용 유전 알고리즘 함수들
-import server_api  # 서버 API (예: put_server_status, put_gl_model_evaluation, put_server_time_result)
-import server_utils  # S3 업로드, 모델 다운로드 등 유틸리티
-
+from . import server_api  
+from . import server_utils  
 # TF warning log filtering (필요 시)
 # os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
