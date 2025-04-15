@@ -249,8 +249,10 @@ class GeneticFLServer:
         for k in total_weights:
             total_weights[k] = total_weights[k] / len(client_updates)
             
+        # DBSCAN 클러스터링: hyperparams_list -> numpy 배열 (shape=(n_samples, 2))
         hyperparams_array = np.array(hyperparams_list)
         scaled_array = hyperparams_array.copy()
+        # 배치 크기는 로그 변환하여 스케일 보정
         scaled_array[:, 1] = np.log(scaled_array[:, 1])
         
         dbscan = DBSCAN(eps=0.1, min_samples=2)
@@ -272,15 +274,20 @@ class GeneticFLServer:
         print("Evolved hyperparameters after clustering:", new_hyperparams)
         self.hyperparams = new_hyperparams
         
+        # 서버 상태 전송: JSON 직렬화를 위해 ListConfig 객체를 일반 컨테이너로 변환
+        from omegaconf import OmegaConf
         status_payload = {
             "FL_task_id": self.task_id,
-            "evolved_hyperparams": new_hyperparams,
+            "evolved_hyperparams": self.hyperparams,
             "num_client_updates": len(client_updates),
             "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
-        server_api.ServerAPI(self.task_id).put_server_status(json.dumps(status_payload))
+        # 변환: ListConfig가 포함된 모든 객체를 네이티브 파이썬 컨테이너로 변환
+        status_payload_native = OmegaConf.to_container(status_payload, resolve=True)
+        server_api.ServerAPI(self.task_id).put_server_status(json.dumps(status_payload_native))
         
         return total_weights
+
     
     def evaluate_global_model(self):
         loss, acc, metrics = self.test_torch(self.model, self.gl_val_loader, self.cfg)
