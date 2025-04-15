@@ -138,7 +138,7 @@ class GeneticFLServer:
     def start(self):
         rounds = self.cfg.num_rounds
         for r in range(1, rounds + 1):
-            print(f"\n=== Starting Training Round {r} ===")
+            print(f"\n=== Starting Training R0ound {r} ===")
             self.train_round(r)
 
 @hydra.main(config_path="conf", config_name="config", version_base=None)

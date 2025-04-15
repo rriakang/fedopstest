@@ -1,38 +1,41 @@
-# conf/config.yaml
+# Common
+
+#conf/config.yaml
 random_seed: 42
 
-learning_rate: 0.001           # 초기 기본 학습률 (클라이언트에서 후보와 비교)
-model_type: 'Pytorch'          # 유지 필수 값
+learning_rate: 0.001 # Input model's learning rate
+
+model_type: 'Pytorch' # This value should be maintained
 model:
-  _target_: models.MNISTClassifier
-  output_size: 10
+  _target_: models.MNISTClassifier # Input your custom model
+  output_size: 10 # Input your model's output size (only classification)
 
 dataset:
-  name: 'MNIST'
-  validation_split: 0.2
+    name: 'MNIST' # Input your data name
+    validation_split: 0.2 # Ratio of dividing train data by validation
 
-# 후보 하이퍼파라미터 (학습률 후보) – Genetic CFL 초기값
-hyperparams: [0.001, 0.005, 0.01]
 
 # client
-task_id: 'test1'
+task_id: 'test1' # Input your Task Name that you register in FedOps Website
+
 wandb: 
-  use: true
-  key: '38f6cf3c2c37660d42ebfe8ab434b72d34be3b31'
-  account: 'rirakang@gachon.ac.kr'
+  use: true # Whether to use wandb
+  key: '38f6cf3c2c37660d42ebfe8ab434b72d34be3b31' # Input your wandb api key
+  account: 'rirakang@gachon.ac.kr' # Input your wandb account
   project: '${dataset.name}_${task_id}'
 
+
 # server
-num_epochs: 1
+num_epochs: 1 # number of local epochs
 batch_size: 128
-num_rounds: 2
-clients_per_round: 1
+num_rounds: 2 # Number of rounds to perform
+clients_per_round: 1 # Number of clients participating in the round
 
 server:
   strategy:
-    _target_: flwr.server.strategy.FedAvg
-    fraction_fit: 0.00001
-    fraction_evaluate: 0.000001
-    min_fit_clients: ${clients_per_round}
-    min_available_clients: ${clients_per_round}
-    min_evaluate_clients: ${clients_per_round}
+    _target_: flwr.server.strategy.FedAvg # aggregation algorithm (defalut: fedavg)
+    fraction_fit: 0.00001 # because we want the number of clients to sample on each round to be solely defined by min_fit_clients
+    fraction_evaluate: 0.000001 # because we want the number of clients to sample on each round to be solely defined by min_fit_clients
+    min_fit_clients: ${clients_per_round} # Minimum number of clients to participate in training
+    min_available_clients: ${clients_per_round} # Minimum number of clients to participate in a round
+    min_evaluate_clients: ${clients_per_round} # Minimum number of clients to participate in evaluation
