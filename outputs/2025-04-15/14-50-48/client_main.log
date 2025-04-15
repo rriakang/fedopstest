@@ -1,0 +1,7 @@
+[2025-04-15 14:50:48,897][root][INFO] - FL_Task - {"dataset": "MNIST", "start_execution_time": "2025-04-15 14:50:48"}
+[2025-04-15 14:50:48,966][__main__][INFO] - Data loaded
+[2025-04-15 14:50:48,992][__main__][INFO] - Downloading latest local model
+[2025-04-15 14:50:48,994][root][INFO] - downloaded local_model_name: MNISTClassifier_local_model_V3.pth
+[2025-04-15 14:51:35,021][__main__][INFO] - Selected best hyperparameter: [0.001, 128] with loss: 0.013736061464906597
+[2025-04-15 14:51:35,023][root][INFO] - init model_type: Pytorch
+[2025-04-15 15:05:46,982][root][INFO] - ccl-e-server;b0:7b:25:0e:e7:96-client close

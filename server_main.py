@@ -13,11 +13,10 @@ def main(cfg: DictConfig) -> None:
     model = instantiate(cfg.model)
     model_type = cfg.model_type
     model_name = type(model).__name__
-    gl_test_torch = models.test_torch()  # 평가 함수 (PyTorch용)
+    gl_test_torch = models.test_torch()   # 평가 함수 (PyTorch)
     gl_val_loader = data_preparation.gl_model_torch_validation(batch_size=cfg.batch_size)
     # 구성 파일에 정의된 초기 후보 하이퍼파라미터 사용 (예: [[0.001, 128], [0.005, 64], [0.01, 32]])
-    initial_hyperparams = cfg.hyperparams  
-    # GeneticFLServer 인스턴스 생성 후 시작
+    initial_hyperparams = cfg.hyperparams
     fl_server = GeneticFLServer(
         cfg=cfg,
         model=model,
