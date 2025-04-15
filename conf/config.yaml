@@ -4,7 +4,7 @@
 random_seed: 42
 
 learning_rate: 0.001 # Input model's learning rate
-
+hyperparams: [0.001, 0.005, 0.01]
 model_type: 'Pytorch' # This value should be maintained
 model:
   _target_: models.MNISTClassifier # Input your custom model
