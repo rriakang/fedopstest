@@ -15,14 +15,21 @@ from omegaconf import DictConfig, OmegaConf
 
 def local_training(model, train_loader, hyperparams, epochs, cfg):
     """
-    각 후보 하이퍼파라미터(예: 학습률) candidate별로 1 epoch(또는 epochs) 학습을 진행하여 손실값을 비교합니다.
-    각 후보마다 optimizer를 새로 생성하고 모델 복사본에서 학습한 뒤, 최종적으로 평균 손실(loss)이 가장 낮은 후보를 선택합니다.
+    각 후보 하이퍼파라미터(예: 학습률 또는 [학습률, 배치크기] 형태) candidate별로
+    1 epoch(또는 epochs) 학습을 진행하여 손실값을 비교합니다.
+    각 후보마다 optimizer를 새로 생성하고 모델 복사본에서 학습한 뒤, 
+    최종적으로 평균 손실(loss)이 가장 낮은 후보를 선택합니다.
     """
     candidate_results = []
     for hp in hyperparams:
+        # hp가 list나 tuple인 경우 첫 번째 요소를 학습률로 사용
+        if isinstance(hp, (list, tuple)):
+            lr_val = float(hp[0])
+        else:
+            lr_val = float(hp)
         temp_model = copy.deepcopy(model)
         criterion = torch.nn.CrossEntropyLoss()
-        optimizer = torch.optim.Adam(temp_model.parameters(), lr=hp)
+        optimizer = torch.optim.Adam(temp_model.parameters(), lr=lr_val)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         temp_model.to(device)
         temp_model.train()
