@@ -315,35 +315,50 @@ class GeneticFLServer:
         }
         server_api.ServerAPI(self.task_id).put_gl_model_evaluation(json.dumps(eval_payload))
     
-    def register_and_upload_model(self):
-        fl_start_time = time.time()
-        gl_model_name = self.model_name
-        fl_end_time = time.time() - fl_start_time
-        
-        server_all_time_result = {
-            "fl_task_id": self.task_id,
-            "server_operation_time": fl_end_time,
-            "gl_model_v": self.server.gl_model_v
-        }
-        json_all_time_result = json.dumps(server_all_time_result)
-        logging.info(f'server_operation_time - {json_all_time_result}')
-        server_api.ServerAPI(self.task_id).put_server_time_result(json_all_time_result)
-        
-        if self.model_type == "Tensorflow":
-            global_model_file_name = f"{gl_model_name}_gl_model_V{self.server.gl_model_v}.h5"
-            server_utils.upload_model_to_bucket(self.task_id, global_model_file_name)
-        elif self.model_type == "Pytorch":
-            global_model_file_name = f"{gl_model_name}_gl_model_V{self.server.gl_model_v}.pth"
-            server_utils.upload_model_to_bucket(self.task_id, global_model_file_name)
-        elif self.model_type == "Huggingface":
-            global_model_file_name = f"{gl_model_name}_gl_model_V{self.server.gl_model_v}"
-            npz_file_path = f"{global_model_file_name}.npz"
-            model_dir = f"{global_model_file_name}"
-            real_npz_path = os.path.join(model_dir, "adapter_parameters.npz")
-            shutil.copy(real_npz_path, npz_file_path)
-            server_utils.upload_model_to_bucket(self.task_id, npz_file_path)
-        
-        logging.info(f'upload {global_model_file_name} model in s3')
+        def register_and_upload_model(self):
+            """
+            FL 서버의 최종 글로벌 모델 등록 및 업로드 과정.
+            기존 FLServer의 흐름을 따라, 글로벌 모델 등록, 서버 운영 시간 측정,
+            서버 시간 결과 전송, 그리고 S3 업로드를 수행합니다.
+            """
+            fl_start_time = time.time()
+            gl_model_name = self.model_name  # 실제 등록 로직에 따라 수정 가능
+            fl_end_time = time.time() - fl_start_time
+            
+            # 서버 운영 시간 결과 전송
+            server_all_time_result = {
+                "fl_task_id": self.task_id,
+                "server_operation_time": fl_end_time,
+                "gl_model_v": self.server.gl_model_v
+            }
+            json_all_time_result = json.dumps(server_all_time_result)
+            logging.info(f'server_operation_time - {json_all_time_result}')
+            server_api.ServerAPI(self.task_id).put_server_time_result(json_all_time_result)
+            
+            # 글로벌 모델 파일 이름 생성 및 파일 존재 여부 체크
+            if self.model_type == "Tensorflow":
+                global_model_file_name = f"{gl_model_name}_gl_model_V{self.server.gl_model_v}.h5"
+            elif self.model_type == "Pytorch":
+                global_model_file_name = f"{gl_model_name}_gl_model_V{self.server.gl_model_v}.pth"
+            elif self.model_type == "Huggingface":
+                global_model_file_name = f"{gl_model_name}_gl_model_V{self.server.gl_model_v}"
+            else:
+                logging.error("Unknown model type.")
+                return
+
+            file_path = f"./{global_model_file_name}"
+            if not os.path.exists(file_path):
+                logging.error(f"Global model file not found: {file_path}")
+                raise FileNotFoundError(f"Global model file not found: {file_path}")
+            
+            # S3 업로드 진행
+            try:
+                server_utils.upload_model_to_bucket(self.task_id, global_model_file_name)
+                logging.info(f'upload {global_model_file_name} model in s3')
+            except Exception as upload_err:
+                logging.error("Error during S3 upload:", exc_info=upload_err)
+                raise upload_err
+
     
     def start(self):
         for r in range(1, self.num_rounds + 1):
