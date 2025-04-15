@@ -13,6 +13,16 @@ from . import server_utils
 from collections import OrderedDict
 from hydra.utils import instantiate
 
+import hydra
+from omegaconf import DictConfig
+from hydra.utils import instantiate
+import models
+import data_preparation
+from genetic_tuner import evolve
+import torch
+import numpy as np
+from sklearn.cluster import DBSCAN  # DBSCAN 클러스터링을 위해 추가
+
 # TF warning log filtering
 # os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
@@ -277,3 +287,190 @@ class FLServer():
             # Modifying the model version in server manager
             server_api.ServerAPI(self.task_id).put_fl_round_fin()
             logging.info('global model version upgrade')
+  ##############################
+# GeneticFLServer 클래스 (Genetic CFL 기능 통합)
+##############################
+class GeneticFLServer:
+    def __init__(self, cfg: Dict, model, model_name, model_type, gl_val_loader, test_torch, initial_hyperparams):
+        self.cfg = cfg
+        self.model = model
+        self.model_name = model_name
+        self.model_type = model_type
+        self.gl_val_loader = gl_val_loader
+        self.test_torch = test_torch
+        # 구성 파일에 정의된 초기 후보 하이퍼파라미터 (예: [[0.001, 128], [0.005, 64], [0.01, 32]])
+        self.hyperparams = initial_hyperparams  
+        self.client_updates = []  # 클라이언트 업데이트 저장 리스트
+        self.num_rounds = int(cfg.num_rounds)
+        self.task_id = os.environ.get("TASK_ID", "default_task")
+        self.server = server_utils.FLServerStatus()  # 서버 상태 객체
+
+    def get_model_weights(self):
+        return self.model.state_dict()
+    
+    def set_model_weights(self, new_state_dict):
+        self.model.load_state_dict(new_state_dict)
+    
+    def send_to_clients(self, broadcast_data: Dict):
+        # 실제 네트워크 전송 코드로 대체할 부분
+        print("Broadcasting model and hyperparameters to clients:")
+        print(broadcast_data)
+    
+    def collect_client_updates(self):
+        """
+        실제 클라이언트로부터 업데이트를 수집하는 함수.
+        각 클라이언트는 { 'weights': state_dict, 'loss': 실제 손실 값, 'hyperparam': [learning_rate, batch_size] } 형태로 데이터를 전송합니다.
+        이 함수는 실제 업데이트 수집 로직(예: 네트워크 통신, 메시지 큐 등)으로 대체되어야 합니다.
+        """
+        raise NotImplementedError("실제 클라이언트 업데이트 수집 로직을 구현하세요.")
+    
+    def aggregate_client_updates(self, client_updates):
+        total_weights = None
+        losses = []
+        hyperparams_list = []  # 각 항목은 [lr, bs] 형태
+        for update in client_updates:
+            weights = update["weights"]
+            loss = update["loss"]
+            hyperparam = update["hyperparam"]  # 이미 [lr, bs] 형태
+            losses.append(loss)
+            hyperparams_list.append(hyperparam)
+            if total_weights is None:
+                total_weights = {k: v.clone() for k, v in weights.items()}
+            else:
+                for k in total_weights:
+                    total_weights[k] += weights[k]
+        for k in total_weights:
+            total_weights[k] = total_weights[k] / len(client_updates)
+            
+        # DBSCAN 클러스터링: hyperparams_list -> numpy 배열 (shape=(n_samples, 2))
+        hyperparams_array = np.array(hyperparams_list)
+        scaled_array = hyperparams_array.copy()
+        # 배치 크기는 로그 변환하여 스케일 보정
+        scaled_array[:, 1] = np.log(scaled_array[:, 1])
+        
+        dbscan = DBSCAN(eps=0.1, min_samples=2)
+        clusters = dbscan.fit_predict(scaled_array)
+        print("DBSCAN clusters:", clusters)
+        
+        new_hyperparams = []
+        unique_clusters = np.unique(clusters)
+        for cluster_id in unique_clusters:
+            if cluster_id == -1:
+                continue
+            indices = [i for i, c in enumerate(clusters) if c == cluster_id]
+            cluster_losses = [losses[i] for i in indices]
+            cluster_params = [hyperparams_list[i] for i in indices]
+            evolved_cluster = evolve(cluster_losses, cluster_params)
+            new_hyperparams.extend(evolved_cluster)
+        if not new_hyperparams:
+            new_hyperparams = self.hyperparams
+        print("Evolved hyperparameters after clustering:", new_hyperparams)
+        self.hyperparams = new_hyperparams
+        
+        # 서버 상태 전송: 클러스터링 결과를 API를 통해 전송
+        status_payload = {
+            "FL_task_id": self.task_id,
+            "evolved_hyperparams": new_hyperparams,
+            "num_client_updates": len(client_updates),
+            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        server_api.ServerAPI(self.task_id).put_server_status(json.dumps(status_payload))
+        
+        return total_weights
+    
+    def evaluate_global_model(self):
+        loss, acc, metrics = self.test_torch(self.model, self.gl_val_loader, self.cfg)
+        return loss, acc, metrics
+    
+    def broadcast_model_and_hyperparams(self):
+        broadcast_data = {
+            "model_weights": self.get_model_weights(),
+            "hyperparams": self.hyperparams
+        }
+        self.send_to_clients(broadcast_data)
+    
+    def train_round(self, round_number: int):
+        print(f"=== Starting Training Round {round_number} ===")
+        self.broadcast_model_and_hyperparams()
+        client_updates = self.collect_client_updates()  # 실제 클라이언트 업데이트 수집 로직 사용
+        new_global_weights = self.aggregate_client_updates(client_updates)
+        self.set_model_weights(new_global_weights)
+        loss, acc, _ = self.evaluate_global_model()
+        print(f"Round {round_number} - Global Model => Loss: {loss:.4f}, Accuracy: {acc:.4f}")
+        eval_payload = {
+            "round": round_number,
+            "loss": loss,
+            "accuracy": acc,
+            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        server_api.ServerAPI(self.task_id).put_gl_model_evaluation(json.dumps(eval_payload))
+    
+    def register_and_upload_model(self):
+        """
+        FL 서버의 최종 글로벌 모델 등록 및 업로드 흐름.
+        기존 FLServer의 흐름을 따라, 글로벌 모델 등록, 서버 운영 시간 측정,
+        서버 시간 결과 전송, 그리고 S3 업로드를 수행합니다.
+        """
+        fl_start_time = time.time()
+        gl_model_name = self.model_name  # 실제 등록 로직으로 대체 가능
+        fl_end_time = time.time() - fl_start_time
+        
+        server_all_time_result = {
+            "fl_task_id": self.task_id,
+            "server_operation_time": fl_end_time,
+            "gl_model_v": self.server.gl_model_v
+        }
+        json_all_time_result = json.dumps(server_all_time_result)
+        logging.info(f'server_operation_time - {json_all_time_result}')
+        server_api.ServerAPI(self.task_id).put_server_time_result(json_all_time_result)
+        
+        if self.model_type == "Tensorflow":
+            global_model_file_name = f"{gl_model_name}_gl_model_V{self.server.gl_model_v}.h5"
+            server_utils.upload_model_to_bucket(self.task_id, global_model_file_name)
+        elif self.model_type == "Pytorch":
+            global_model_file_name = f"{gl_model_name}_gl_model_V{self.server.gl_model_v}.pth"
+            server_utils.upload_model_to_bucket(self.task_id, global_model_file_name)
+        elif self.model_type == "Huggingface":
+            global_model_file_name = f"{gl_model_name}_gl_model_V{self.server.gl_model_v}"
+            npz_file_path = f"{global_model_file_name}.npz"
+            model_dir = f"{global_model_file_name}"
+            real_npz_path = os.path.join(model_dir, "adapter_parameters.npz")
+            shutil.copy(real_npz_path, npz_file_path)
+            server_utils.upload_model_to_bucket(self.task_id, npz_file_path)
+        
+        logging.info(f'upload {global_model_file_name} model in s3')
+    
+    def start(self):
+        for r in range(1, self.num_rounds + 1):
+            self.train_round(r)
+        self.register_and_upload_model()
+        final_payload = {"FLSeReady": False, "final_round": self.num_rounds}
+        server_api.ServerAPI(self.task_id).put_server_status(json.dumps(final_payload))
+        print("Global model training finished.")
+
+##############################################
+# server_main.py 진입점: GeneticFLServer 실행
+##############################################
+@hydra.main(config_path="conf", config_name="config", version_base=None)
+def main(cfg: DictConfig) -> None:
+    # 모델 초기화
+    model = instantiate(cfg.model)
+    model_type = cfg.model_type
+    model_name = type(model).__name__
+    gl_test_torch = models.test_torch()   # 평가 함수 (PyTorch)
+    gl_val_loader = data_preparation.gl_model_torch_validation(batch_size=cfg.batch_size)
+    # 구성 파일에 정의된 초기 후보 하이퍼파라미터 사용 (예: [[0.001, 128], [0.005, 64], [0.01, 32]])
+    initial_hyperparams = cfg.hyperparams
+    fl_server = GeneticFLServer(
+        cfg=cfg,
+        model=model,
+        model_name=model_name,
+        model_type=model_type,
+        gl_val_loader=gl_val_loader,
+        test_torch=gl_test_torch,
+        initial_hyperparams=initial_hyperparams,
+    )
+    fl_server.start()
+
+if __name__ == "__main__":
+    main()
