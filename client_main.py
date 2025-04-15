@@ -20,13 +20,16 @@ def local_training(model, train_loader, hyperparams, epochs, cfg):
     각 후보마다 optimizer를 새로 생성하고 모델 복사본에서 학습한 뒤, 
     최종적으로 평균 손실(loss)이 가장 낮은 후보를 선택합니다.
     """
+    from omegaconf import OmegaConf  # Hydra config를 일반 리스트로 변환하기 위해 import
     candidate_results = []
     for hp in hyperparams:
-        # hp가 list나 tuple인 경우 첫 번째 요소를 학습률로 사용
-        if isinstance(hp, (list, tuple)):
-            lr_val = float(hp[0])
+        # Hydra ListConfig 객체를 네이티브 파이썬 객체로 변환
+        hp_native = OmegaConf.to_container(hp, resolve=True)
+        # hp가 리스트나 튜플인 경우 첫 번째 요소(학습률)를 사용
+        if isinstance(hp_native, (list, tuple)):
+            lr_val = float(hp_native[0])
         else:
-            lr_val = float(hp)
+            lr_val = float(hp_native)
         temp_model = copy.deepcopy(model)
         criterion = torch.nn.CrossEntropyLoss()
         optimizer = torch.optim.Adam(temp_model.parameters(), lr=lr_val)
@@ -44,9 +47,10 @@ def local_training(model, train_loader, hyperparams, epochs, cfg):
                 optimizer.step()
                 total_loss += loss.item()
         avg_loss = total_loss / (len(train_loader) * epochs)
-        candidate_results.append((hp, avg_loss))
+        candidate_results.append((hp_native, avg_loss))
     best_candidate = min(candidate_results, key=lambda x: x[1])
     return best_candidate  # (best_hp, best_loss)
+
 
 @hydra.main(config_path="./conf", config_name="config", version_base=None)
 def main(cfg: DictConfig) -> None:
