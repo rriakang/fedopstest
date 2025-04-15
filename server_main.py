@@ -96,14 +96,14 @@ class GeneticFLServer:
         """
         total_weights = None
         losses = []
-        hyperparams = []
+        hyperparams = []  # 각 항목은 이미 [lr, bs] 형태여야 함
         for update in client_updates:
             weights = update['weights']
             loss = update['loss']
-            hyperparam = update['hyperparam']
+            hyperparam = update['hyperparam']  # 이미 예: [0.001, 128]
             losses.append(loss)
-            # DBSCAN에 적용하기 위해 1차원 배열 형태로 변환 (예: [[0.001], [0.005], ...])
-            hyperparams.append([hyperparam])
+            # 추가 리스트 감싸기 없이 hyperparam을 그대로 추가
+            hyperparams.append(hyperparam)
             if total_weights is None:
                 total_weights = {k: v.clone() for k, v in weights.items()}
             else:
@@ -113,26 +113,28 @@ class GeneticFLServer:
         for k in total_weights:
             total_weights[k] = total_weights[k] / len(client_updates)
         
-        # DBSCAN 클러스터링: hyperparams 배열은 shape=(n_samples, 1) 형태임
+        # DBSCAN 클러스터링: hyperparams 배열의 shape=(n_samples, 2)
         hyperparams_array = np.array(hyperparams)
-        # 여기서 eps, min_samples는 데이터 분포에 따라 조정 (예시: eps=0.0001, min_samples=2)
+        # 스케일링 (배치 크기 부분): 예를 들어, 두 번째 컬럼에 대해 로그 변환
+        scaled_array = hyperparams_array.copy()
+        scaled_array[:, 1] = np.log(scaled_array[:, 1])
+        
+        # DBSCAN 클러스터링: eps, min_samples는 필요에 따라 조정
         dbscan = DBSCAN(eps=0.1, min_samples=2)
-        clusters = dbscan.fit_predict(hyperparams_array)
+        clusters = dbscan.fit_predict(scaled_array)
         print("DBSCAN clusters:", clusters)
         
-        # 각 클러스터별로 후보를 진화시킵니다.
+        # 각 클러스터별로 후보 진화
         new_hyperparams = []
         unique_clusters = np.unique(clusters)
         for cluster_id in unique_clusters:
-            if cluster_id == -1:  # 잡음 데이터(noise)는 제외
+            if cluster_id == -1:  # 잡음은 제외
                 continue
             indices = [i for i, c in enumerate(clusters) if c == cluster_id]
             cluster_losses = [losses[i] for i in indices]
-            # hyperparams는 [[lr1], [lr2], …] 형태이므로 값만 추출합니다.
-            cluster_etas = [hyperparams[i][0] for i in indices]
-            evolved_cluster = evolve(cluster_losses, cluster_etas)
+            cluster_params = [hyperparams[i] for i in indices]  # 이미 [lr, bs] 형태
+            evolved_cluster = evolve(cluster_losses, cluster_params)
             new_hyperparams.extend(evolved_cluster)
-        # 만약 클러스터링 결과 진화된 후보가 없으면 기존 hyperparams를 유지
         if not new_hyperparams:
             new_hyperparams = self.hyperparams
         print("Evolved hyperparameters after clustering:", new_hyperparams)
