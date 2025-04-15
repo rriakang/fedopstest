@@ -190,6 +190,258 @@ class FLServer():
             server_api.ServerAPI(self.task_id).put_fl_round_fin()
             logging.info('global model version upgrade')
 
+# ##############################################
+# # GeneticFLServer 클래스 (Genetic CFL 기능 통합)
+# ##############################################
+# class GeneticFLServer:
+#     def __init__(self, cfg: Dict, model, model_name, model_type, gl_val_loader, test_torch, initial_hyperparams):
+#         self.cfg = cfg
+#         self.model = model
+#         self.model_name = model_name
+#         self.model_type = model_type
+#         self.gl_val_loader = gl_val_loader
+#         self.test_torch = test_torch
+#         # 구성 파일에 정의된 초기 후보 하이퍼파라미터 (예: [[0.001, 128], [0.005, 64], [0.01, 32]])
+#         self.hyperparams = initial_hyperparams  
+#         self.client_updates = []  # 클라이언트 업데이트 저장 리스트
+#         self.num_rounds = int(cfg.num_rounds)
+#         self.task_id = os.environ.get("TASK_ID", "default_task")
+#         self.server = server_utils.FLServerStatus()  # 글로벌 모델 버전 등 상태 관리 객체
+#         self.init_model = model  # FLServer의 흐름과 맞추기 위해 초기 모델을 저장
+
+#     def get_model_weights(self):
+#         return self.model.state_dict()
+    
+#     def set_model_weights(self, new_state_dict):
+#         self.model.load_state_dict(new_state_dict)
+    
+#     def send_to_clients(self, broadcast_data: Dict):
+#         # 실제 네트워크 전송 대신 단순 출력 (운영 환경에서는 네트워크 코드로 대체)
+#         print("Broadcasting model and hyperparameters to clients:")
+#         print(broadcast_data)
+    
+#     def collect_client_updates(self):
+#         """
+#         실제 클라이언트로부터 업데이트를 수집하는 함수.
+#         각 클라이언트는 { 'weights': state_dict, 'loss': 실제 손실 값,
+#         'hyperparam': [learning_rate, batch_size] } 형태로 데이터를 전송해야 합니다.
+#         (실제 업데이트 수집 로직은 네트워크 통신 혹은 메시지 큐 등으로 구현되어야 함)
+#         여기서는 예시용 dummy update를 반환합니다.
+#         """
+#         dummy_update = {
+#             "weights": self.get_model_weights(),
+#             "loss": 0.25,              # 실제 손실 값이 들어가야 함.
+#             "hyperparam": self.hyperparams[0]  # 예: [0.001, 128]
+#         }
+#         print("Collecting client updates (dummy update)...")
+#         return [dummy_update]
+    
+#     def aggregate_client_updates(self, client_updates):
+#         total_weights = None
+#         losses = []
+#         hyperparams_list = []  # 각 항목은 [lr, bs] 형태
+#         for update in client_updates:
+#             weights = update["weights"]
+#             loss = update["loss"]
+#             hyperparam = update["hyperparam"]  # 이미 [lr, bs] 형태
+#             losses.append(loss)
+#             hyperparams_list.append(hyperparam)
+#             if total_weights is None:
+#                 total_weights = {k: v.clone() for k, v in weights.items()}
+#             else:
+#                 for k in total_weights:
+#                     total_weights[k] += weights[k]
+#         for k in total_weights:
+#             total_weights[k] = total_weights[k] / len(client_updates)
+            
+#         # DBSCAN 클러스터링: hyperparams_list를 numpy 배열로 변환 (shape=(n_samples, 2))
+#         hyperparams_array = np.array(hyperparams_list)
+#         scaled_array = hyperparams_array.copy()
+#         # 배치 크기는 로그 변환하여 스케일 보정
+#         scaled_array[:, 1] = np.log(scaled_array[:, 1])
+        
+#         dbscan = DBSCAN(eps=0.1, min_samples=2)
+#         clusters = dbscan.fit_predict(scaled_array)
+#         print("DBSCAN clusters:", clusters)
+        
+#         new_hyperparams = []
+#         unique_clusters = np.unique(clusters)
+#         for cluster_id in unique_clusters:
+#             if cluster_id == -1:
+#                 continue
+#             indices = [i for i, c in enumerate(clusters) if c == cluster_id]
+#             cluster_losses = [losses[i] for i in indices]
+#             cluster_params = [hyperparams_list[i] for i in indices]
+#             evolved_cluster = evolve(cluster_losses, cluster_params)
+#             new_hyperparams.extend(evolved_cluster)
+#         if not new_hyperparams:
+#             new_hyperparams = self.hyperparams
+#         print("Evolved hyperparameters after clustering:", new_hyperparams)
+#         self.hyperparams = new_hyperparams
+        
+#         # 서버 상태 전송: dict를 OmegaConf 객체로 생성한 후 네이티브 컨테이너로 변환하여 JSON 직렬화
+#         status_payload = {
+#             "FL_task_id": self.task_id,
+#             "evolved_hyperparams": self.hyperparams,
+#             "num_client_updates": len(client_updates),
+#             "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+#         }
+#         status_payload_native = OmegaConf.to_container(OmegaConf.create(status_payload), resolve=True)
+#         server_api.ServerAPI(self.task_id).put_server_status(json.dumps(status_payload_native))
+        
+#         return total_weights
+    
+#     def evaluate_global_model(self):
+#         loss, acc, metrics = self.test_torch(self.model, self.gl_val_loader, self.cfg)
+#         return loss, acc, metrics
+    
+#     def broadcast_model_and_hyperparams(self):
+#         broadcast_data = {
+#             "model_weights": self.get_model_weights(),
+#             "hyperparams": self.hyperparams
+#         }
+#         self.send_to_clients(broadcast_data)
+    
+#     def train_round(self, round_number: int):
+#         print(f"=== Starting Training Round {round_number} ===")
+#         self.broadcast_model_and_hyperparams()
+#         client_updates = self.collect_client_updates()
+#         new_global_weights = self.aggregate_client_updates(client_updates)
+#         self.set_model_weights(new_global_weights)
+#         loss, acc, _ = self.evaluate_global_model()
+#         print(f"Round {round_number} - Global Model => Loss: {loss:.4f}, Accuracy: {acc:.4f}")
+#         eval_payload = {
+#             "round": round_number,
+#             "loss": loss,
+#             "accuracy": acc,
+#             "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+#         }
+#         server_api.ServerAPI(self.task_id).put_gl_model_evaluation(json.dumps(eval_payload))
+    
+#     def init_gl_model_registration(self, model, gl_model_name) -> str:
+#         """
+#         글로벌 모델을 등록하는 함수.
+#         모델이 없으면 초기 글로벌 모델을 생성하고, 그렇지 않으면 최신 글로벌 모델을 로드합니다.
+#         """
+#         logging.info(f"last_gl_model_v: {self.server.last_gl_model_v}")
+#         if not model:
+#             logging.info("init global model making")
+#             init_model, model_name = self.init_model, self.model_name
+#             print(f"init_gl_model_name: {model_name}")
+#             # fl_server_start()는 Flower 서버 실행 관련 기능이므로, 여기서는 초기 모델 이름만 반환합니다.
+#             return model_name
+#         else:
+#             logging.info("load last global model")
+#             print(f"last_gl_model_name: {gl_model_name}")
+#             return gl_model_name
+    
+#     def register_and_upload_model(self):
+#         """
+#         FL 서버의 최종 글로벌 모델 등록 및 업로드 과정.
+#         기존 FLServer 흐름을 따라, 글로벌 모델 등록, 서버 운영 시간 측정,
+#         서버 시간 결과 전송, 그리고 S3 업로드를 수행합니다.
+#         """
+#         self.server.gl_model_v = self.server.last_gl_model_v + 1
+#         fl_start_time = time.time()
+#         gl_model_name = self.init_gl_model_registration(self.next_model, self.next_model_name)
+#         fl_end_time = time.time() - fl_start_time
+#         server_all_time_result = {
+#             "fl_task_id": self.task_id,
+#             "server_operation_time": fl_end_time,
+#             "GL_Model_V": self.server.gl_model_v
+#         }
+#         json_all_time_result = json.dumps(server_all_time_result)
+#         logging.info(f"server_operation_time - {json_all_time_result}")
+#         server_api.ServerAPI(self.task_id).put_server_time_result(json_all_time_result)
+        
+#         if self.model_type == "Tensorflow":
+#             global_model_file_name = f"{gl_model_name}_gl_model_V{self.server.gl_model_v}.h5"
+#         elif self.model_type == "Pytorch":
+#             global_model_file_name = f"{gl_model_name}_gl_model_V{self.server.gl_model_v}.pth"
+#         elif self.model_type == "Huggingface":
+#             global_model_file_name = f"{gl_model_name}_gl_model_V{self.server.gl_model_v}"
+#         else:
+#             logging.error("Unknown model type for upload.")
+#             return
+        
+#         file_path = f"./{global_model_file_name}"
+#         if not os.path.exists(file_path):
+#             logging.error(f"Global model file not found: {file_path}")
+#             raise FileNotFoundError(f"Global model file not found: {file_path}")
+        
+#         try:
+#             server_utils.upload_model_to_bucket(self.task_id, global_model_file_name)
+#             logging.info(f"upload {global_model_file_name} model in s3")
+#         except Exception as upload_err:
+#             logging.error("Error during S3 upload:", exc_info=upload_err)
+#             raise upload_err
+    
+#     def start(self):
+#         # FL 서버 시작 전에 글로벌 모델을 다운로드 (S3 또는 로컬)
+#         today_time = datetime.datetime.today().strftime('%Y-%m-%d %H-%M-%S')
+#         self.next_model, self.next_model_name, self.server.last_gl_model_v = server_utils.model_download_s3(
+#             self.task_id, self.model_type, self.init_model
+#         )
+#         self.server.gl_model_v = self.server.last_gl_model_v + 1
+#         inform_Payload = {
+#             "S3_bucket": "fl-gl-model",
+#             "Last_GL_Model": "gl_model_%s_V.h5" % self.server.last_gl_model_v,
+#             "FLServer_start": today_time,
+#             "FLSeReady": True,
+#             "GL_Model_V": self.server.gl_model_v
+#         }
+#         server_status_json = json.dumps(inform_Payload)
+#         server_api.ServerAPI(self.task_id).put_server_status(server_status_json)
+        
+#         try:
+#             fl_start_time = time.time()
+#             gl_model_name = self.init_gl_model_registration(self.next_model, self.next_model_name)
+#             fl_end_time = time.time() - fl_start_time
+#             server_all_time_result = {
+#                 "fl_task_id": self.task_id,
+#                 "server_operation_time": fl_end_time,
+#                 "GL_Model_V": self.server.gl_model_v
+#             }
+#             json_all_time_result = json.dumps(server_all_time_result)
+#             logging.info(f"server_operation_time - {json_all_time_result}")
+#             server_api.ServerAPI(self.task_id).put_server_time_result(json_all_time_result)
+#             if self.model_type == "Tensorflow":
+#                 global_model_file_name = f"{gl_model_name}_gl_model_V{self.server.gl_model_v}.h5"
+#             elif self.model_type == "Pytorch":
+#                 global_model_file_name = f"{gl_model_name}_gl_model_V{self.server.gl_model_v}.pth"
+#             elif self.model_type == "Huggingface":
+#                 global_model_file_name = f"{gl_model_name}_gl_model_V{self.server.gl_model_v}"
+#             else:
+#                 logging.error("Unknown model type for upload.")
+#                 return
+#             file_path = f"./{global_model_file_name}"
+#             if not os.path.exists(file_path):
+#                 logging.error(f"Global model file not found: {file_path}")
+#                 raise FileNotFoundError(f"Global model file not found: {file_path}")
+#             try:
+#                 server_utils.upload_model_to_bucket(self.task_id, global_model_file_name)
+#                 logging.info(f"upload {global_model_file_name} model in s3")
+#             except Exception as upload_err:
+#                 logging.error("Error during S3 upload:", exc_info=upload_err)
+#                 raise upload_err
+#         except Exception as e:
+#             logging.error("error: ", e)
+#             data_inform = {"FLSeReady": False}
+#             server_api.ServerAPI(self.task_id).put_server_status(json.dumps(data_inform))
+#         finally:
+#             logging.info("server close")
+#             server_api.ServerAPI(self.task_id).put_fl_round_fin()
+#             logging.info("global model version upgrade")
+        
+#         # FL 학습 라운드 수행
+#         for r in range(1, self.num_rounds + 1):
+#             self.train_round(r)
+#         self.register_and_upload_model()
+#         final_payload = {"FLSeReady": False, "final_round": self.num_rounds}
+#         server_api.ServerAPI(self.task_id).put_server_status(json.dumps(final_payload))
+#         print("Global model training finished.")
+
+
 ##############################################
 # GeneticFLServer 클래스 (Genetic CFL 기능 통합)
 ##############################################
@@ -365,7 +617,11 @@ class GeneticFLServer:
             return
         
         file_path = f"./{global_model_file_name}"
-        if not os.path.exists(file_path):
+        # Pytorch 모델인 경우, 파일이 없으면 저장하도록 함
+        if self.model_type == "Pytorch" and not os.path.exists(file_path):
+            torch.save(self.model.state_dict(), file_path)
+            logging.info("Global model saved to %s", file_path)
+        elif not os.path.exists(file_path):
             logging.error(f"Global model file not found: {file_path}")
             raise FileNotFoundError(f"Global model file not found: {file_path}")
         
@@ -405,6 +661,7 @@ class GeneticFLServer:
             json_all_time_result = json.dumps(server_all_time_result)
             logging.info(f"server_operation_time - {json_all_time_result}")
             server_api.ServerAPI(self.task_id).put_server_time_result(json_all_time_result)
+            
             if self.model_type == "Tensorflow":
                 global_model_file_name = f"{gl_model_name}_gl_model_V{self.server.gl_model_v}.h5"
             elif self.model_type == "Pytorch":
@@ -414,10 +671,16 @@ class GeneticFLServer:
             else:
                 logging.error("Unknown model type for upload.")
                 return
+            
             file_path = f"./{global_model_file_name}"
-            if not os.path.exists(file_path):
+            # Pytorch 모델의 경우, 파일이 없으면 저장 후 진행
+            if self.model_type == "Pytorch" and not os.path.exists(file_path):
+                torch.save(self.model.state_dict(), file_path)
+                logging.info("Global model saved to %s", file_path)
+            elif not os.path.exists(file_path):
                 logging.error(f"Global model file not found: {file_path}")
                 raise FileNotFoundError(f"Global model file not found: {file_path}")
+            
             try:
                 server_utils.upload_model_to_bucket(self.task_id, global_model_file_name)
                 logging.info(f"upload {global_model_file_name} model in s3")
