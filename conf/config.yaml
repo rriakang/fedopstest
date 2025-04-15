@@ -4,7 +4,11 @@
 random_seed: 42
 
 learning_rate: 0.001 # Input model's learning rate
-hyperparams: [0.001, 0.005, 0.01]
+hyperparams: 
+- [0.001, 128]
+- [0.005, 64]
+- [0.01, 32]
+
 model_type: 'Pytorch' # This value should be maintained
 model:
   _target_: models.MNISTClassifier # Input your custom model
@@ -28,7 +32,7 @@ wandb:
 # server
 num_epochs: 1 # number of local epochs
 batch_size: 128
-num_rounds: 2 # Number of rounds to perform
+num_rounds: 20 # Number of rounds to perform
 clients_per_round: 1 # Number of clients participating in the round
 
 server:

@@ -116,7 +116,7 @@ class GeneticFLServer:
         # DBSCAN 클러스터링: hyperparams 배열은 shape=(n_samples, 1) 형태임
         hyperparams_array = np.array(hyperparams)
         # 여기서 eps, min_samples는 데이터 분포에 따라 조정 (예시: eps=0.0001, min_samples=2)
-        dbscan = DBSCAN(eps=0.0001, min_samples=2)
+        dbscan = DBSCAN(eps=0.1, min_samples=2)
         clusters = dbscan.fit_predict(hyperparams_array)
         print("DBSCAN clusters:", clusters)
         
