@@ -15,6 +15,7 @@ from genetic_tuner import evolve  # 2차원 하이퍼파라미터용 유전 알�
 from . import server_api  
 from . import server_utils 
 from omegaconf import OmegaConf
+import torch
 # TF warning log filtering (필요 시)
 # os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
